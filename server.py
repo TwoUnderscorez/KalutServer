@@ -1,2 +1,6 @@
-import os
-os.system('cmd')
+
+
+
+### ENTRY POINT ###
+if __name__=='__main__':
+    pass
