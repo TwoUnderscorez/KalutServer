@@ -12,7 +12,6 @@ def RunKalutServer():
     RESTfulAPI_thread.start()
 
     # Connection to the Database
-    model = Communicator()
     
     
     RESTfulAPI_thread.join()
