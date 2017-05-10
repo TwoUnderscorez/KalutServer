@@ -13,12 +13,12 @@ def RunKalutServer():
 
     # Connection to the Database
     model = Communicator()
-    a = model.get_user_kaluts('admin', 'admdin')
-    print a
+    
+    
     RESTfulAPI_thread.join()
 
 def RESTfulAPI_main():
     start_server()
 
 if __name__=='__main__':
-    RunKalutServer()
+    pass

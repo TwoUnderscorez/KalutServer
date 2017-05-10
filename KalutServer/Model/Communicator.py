@@ -45,3 +45,14 @@ class Communicator(object):
         # hasher.update(password)
         # return hasher.digest() == res[0][0].encode('ascii')
         return password == res[0][0]
+    def get_quiz_info(self, uid):
+        query = 'SELECT description FROM kalut.quizes WHERE uid={0};'.format(uid)
+        return self.execute(query)[0][0]
+    def get_all_quizes_info(self):
+        query = 'SELECT uid, description FROM kalut.quizes;'
+        return self.execute(query)
+    def get_quiz_data(self, uid):
+        query = 'SELECT quiz FROM kalut.quizes WHERE uid={0};'.format(uid)
+        return self.execute(query)[0][0]
+    def logout(self):
+        self.conn.cmd_quit()
