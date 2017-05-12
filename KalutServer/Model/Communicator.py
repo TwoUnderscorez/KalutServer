@@ -26,14 +26,14 @@ class Communicator(object):
             return None
 
     def get_user_kaluts(self, username, password):
-        if self.auth_user(username, password):
+        if self.auth_user(username, password)['Auth']:
             res = self.execute('SELECT my_quizes FROM kalut.users WHERE username="{0}";'.format(username))
             res = json.loads(res[0][0])
             return res['uids']
         else:
             raise InvalidCredentials
     def get_user_fav_kaluts(self, username, password):
-        if self.auth_user(username, password):
+        if self.auth_user(username, password)['Auth']:
             res = self.execute('SELECT fav_quizes FROM kalut.users WHERE username="{0}";'.format(username))
             res = json.loads(res[0][0])
             return res['uids']
@@ -44,7 +44,10 @@ class Communicator(object):
         # hasher = sha256()
         # hasher.update(password)
         # return hasher.digest() == res[0][0].encode('ascii')
-        return password == res[0][0]
+        if res and res[0] and res[00]:
+            return {'Auth' : str(password == res[0][0])}
+        else:
+            return {'Auth': 'False'}
     def get_quiz_info(self, uid):
         query = 'SELECT description FROM kalut.quizes WHERE uid={0};'.format(uid)
         return self.execute(query)[0][0]

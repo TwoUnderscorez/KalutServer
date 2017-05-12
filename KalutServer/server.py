@@ -7,7 +7,7 @@ import threading
 def RunKalutServer():
     # RESTful API
     print 'Initializing RESTful API...'
-    RESTfulAPI_thread = threading.Thread(target=RESTfulAPI_main, name='RESTfulAPI_thread', )
+    RESTfulAPI_thread = threading.Thread(target=RESTfulAPI_main, name='RESTfulAPI_thread')
     RESTfulAPI_thread.daemon = True
     RESTfulAPI_thread.start()
 

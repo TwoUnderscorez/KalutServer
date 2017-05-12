@@ -1,4 +1,4 @@
-from bottle import Bottle, run, ServerAdapter, get, post
+from bottle import Bottle, run, ServerAdapter, get, post, request
 class SSLWSGIRefServer(ServerAdapter):
     def run(self, handler):
         from wsgiref.simple_server import make_server, WSGIRequestHandler
