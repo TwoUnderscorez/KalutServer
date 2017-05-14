@@ -27,16 +27,22 @@ class Communicator(object):
 
     def get_user_kaluts(self, username, password):
         if self.auth_user(username, password)['Auth']:
-            res = self.execute('SELECT my_quizes FROM kalut.users WHERE username="{0}";'.format(username))
-            res = json.loads(res[0][0])
-            return res['uids']
+            uids = self.execute('SELECT my_quizes FROM kalut.users WHERE username="{0}";'.format(username))
+            uids = json.loads(uids[0][0])['uids']
+            retdata = dict()
+            for uid in uids:
+                retdata[uid]=self.get_quiz_info(uid)
+            return retdata
         else:
             raise InvalidCredentials
     def get_user_fav_kaluts(self, username, password):
         if self.auth_user(username, password)['Auth']:
-            res = self.execute('SELECT fav_quizes FROM kalut.users WHERE username="{0}";'.format(username))
-            res = json.loads(res[0][0])
-            return res['uids']
+            uids = self.execute('SELECT fav_quizes FROM kalut.users WHERE username="{0}";'.format(username))
+            uids = json.loads(uids[0][0])['uids']
+            retdata = dict()
+            for uid in uids:
+                retdata[uid]=self.get_quiz_info(uid)
+            return retdata
         else:
             raise InvalidCredentials
     def auth_user(self, username, password):
@@ -50,10 +56,18 @@ class Communicator(object):
             return {'Auth': 'False'}
     def get_quiz_info(self, uid):
         query = 'SELECT description FROM kalut.quizes WHERE uid={0};'.format(uid)
-        return self.execute(query)[0][0]
+        data = self.execute(query)
+        if data and data[0] and data[0][0]:
+            return data[0][0]
+        else:
+            return None
     def get_all_quizes_info(self):
         query = 'SELECT uid, description FROM kalut.quizes;'
-        return self.execute(query)
+        res = self.execute(query)
+        ret = dict()
+        for i in res:
+            ret[i[0]]=i[1]
+        return ret
     def get_quiz_data(self, uid):
         query = 'SELECT quiz FROM kalut.quizes WHERE uid={0};'.format(uid)
         return self.execute(query)[0][0]

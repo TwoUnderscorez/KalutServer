@@ -43,3 +43,15 @@ def get_all_quizes_info():
 @blt.get('/quizes/get_quiz_data_by_uid&<uid>')
 def get_quiz_data(uid):
     return handle_cm_func(Communicator.get_quiz_data, uid)
+
+@blt.post('/quizes/get_user_kaluts_info')
+def get_user_kaluts_info():
+    usrname = blt.request.json.get('Username')
+    pwd = blt.request.json.get('Password')
+    return handle_cm_func(Communicator.get_user_kaluts, usrname, pwd)
+
+@blt.post('/quizes/get_user_fav_kaluts_info')
+def get_user_kaluts_fav_info():
+    usrname = blt.request.json.get('Username')
+    pwd = blt.request.json.get('Password')
+    return handle_cm_func(Communicator.get_user_fav_kaluts, usrname, pwd)
