@@ -12,7 +12,7 @@ def RunKalutServer():
     RESTfulAPI_thread.start()
 
     # Connection to the Database
-    
+
     
     RESTfulAPI_thread.join()
 
