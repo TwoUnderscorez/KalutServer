@@ -74,7 +74,7 @@ class Communicator(object):
             query = '''
             INSERT INTO kalut.quizes (quiz, description) VALUES
             ("{0}", "{1}");
-            '''.format(quiz_data, description)
+            '''.format(re.sub(r'([\"])',    r'\\\1', quiz_data), re.sub(r'([\"])',    r'\\\1', description))
             self.execute(query)
             # get the uid of the quiz
             query = 'SELECT last_insert_id();'
