@@ -2,6 +2,8 @@ import mysql.connector as sql
 from hashlib import sha256
 import json
 from KalutServer.Exceptions import *
+from KalutServer.Room.RoomMgr import start_room_async
+from KalutServer.Room.RoomMgr import create_room as room_mgr_create_room
 import re
 
 class Communicator(object):
@@ -111,4 +113,9 @@ class Communicator(object):
             return {'Auth': 'False'}
     def register_user(self, username, password):
         pass
+    # ROOM MGR
+    def create_room(self, uid):
+        pin = room_mgr_create_room(uid)
+        start_room_async(pin)
+        return {'pin' : str(pin)}
     

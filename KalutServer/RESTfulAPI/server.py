@@ -1,6 +1,6 @@
 import SSLbottle as blt
 from KalutServer.Exceptions import *
-from KalutServer.Model.Communicator import Communicator 
+from KalutServer.Model.Communicator import Communicator
 import json
 
 def build_standart_response(data, status='OK', errMsg=None):
@@ -32,6 +32,11 @@ def test():
     return build_standart_response({
             'Service Status' : 'OK' 
         })
+
+@blt.get('/rooms/create_room&<uid>')
+def create_room(uid):
+    return handle_cm_func(Communicator.create_room, uid)
+
 ### /quizes
 @blt.get('/quizes/get_quiz_info_by_uid&<uid>')
 def get_quiz_info_by_uid(uid):
