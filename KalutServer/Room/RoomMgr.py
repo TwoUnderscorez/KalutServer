@@ -11,7 +11,9 @@ import json
 import traceback
 rooms = dict()
 
-
+@staticmethod
+def funcname(parameter_list):
+    pass
 def soc_router():
     srvsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srvsoc.bind(('localhost', 50000))
@@ -24,13 +26,18 @@ def soc_router():
             if data:
                 req = json.loads(data)
                 if int(req['pin']) in rooms.keys() and req['name']:
-                    cltsock.send(json.dumps({'status' : 'ok'}))
-                    rooms[req['pin']].add_client(cltsock, req['name'])
-                    if not rooms[req['pin']].running:
-                        t = threading.Thread(target=start_room, args=(req['pin'],))
-                        t.start()
+                    if rooms[req['pin']].status in ('WAITING_FOR_PLAYERS', 'WAITING_FOR_LAST_PLAYER'):
+                        cltsock.send(json.dumps({'status' : 'ok', 'UID' : str(rooms[req['pin']].game_uid)}))
+                        rooms[req['pin']].add_client(cltsock, req['name'])
+                        if not rooms[req['pin']].running:
+                            t = threading.Thread(target=start_room, args=(req['pin'],))
+                            t.start()
+                    else:
+                        cltsock.send(json.dumps({'status' : "Room isn't waiting for players."}))
+                        cltsock.close()
                 else:
-                    cltsock.send(json.dumps({'status' : 'invalid pin'}))
+                    cltsock.send(json.dumps({'status' : 'invalid pin.'}))
+                    cltsock.close()
             else:
                 cltsock.close()
         except:

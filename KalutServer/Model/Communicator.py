@@ -69,7 +69,7 @@ class Communicator(object):
         return ret
     def get_quiz_data(self, uid):
         query = 'SELECT quiz FROM kalut.quizes WHERE uid={0};'.format(uid)
-        return self.execute(query)[0][0]
+        return {'Quiz' : self.execute(query)[0][0]}
     def add_kalut(self, username, password, description, quiz_data):
         if self.auth_user(username, password)['Auth']:
             # add the quiz to the database
