@@ -63,12 +63,13 @@ class Room(object):
 
     def wallview_next_q(self, s):
         if self.status == 'WAITING_FOR_PLAYERS':
-            if len(self.clients) > 1:
+            if len(self.clients) > 2:
                 self.status = 'WAITING_FOR_LAST_PLAYER'
             else:
                 return {'status' : 'err', 'msg' : 'There arn\'t enough players to start a game.'}
-        self.wallview_pressed_next = True
-        return {'status' : 'ok'}
+        else:
+            self.wallview_pressed_next = True
+            return {'status' : 'ok'}
 
     def handle_request(self, data, s):
         req = json.loads(data)
@@ -106,7 +107,6 @@ class Room(object):
         for qitem in range(0, len(self.game_data[self.on_question - 1]["Answers"]) ):
             if self.game_data[self.on_question - 1]["Answers"][qitem]["Value"]:
                 self.correct_ans_index.append(qitem)
-        print self.correct_ans_index
 
     def handle_game_status_and_events(self):
         if self.status == 'WAITING_FOR_PLAYERS':
@@ -123,8 +123,6 @@ class Room(object):
         elif self.status == 'WAITING_FOR_LAST_PLAYER_SYNC':
             if len(self.event_register) > 1:
                 self.status = 'NextQ'
-                self.update_correct_ans_index()
-                self.wallview_pressed_next = False
                 print self.status
         elif self.status == 'NextQ':
             self.on_question+=1
@@ -154,7 +152,6 @@ class Room(object):
         while self.running:
             self.handle_game_status_and_events()
 
-            # select
             if not self.inputs:
                 time.sleep(0.5)
                 continue
@@ -207,4 +204,4 @@ class Room(object):
 
 
     def close(self):
-        pass
+        self.running = False

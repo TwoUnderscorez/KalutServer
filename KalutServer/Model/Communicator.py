@@ -4,6 +4,7 @@ import json
 from KalutServer.Exceptions import *
 from KalutServer.Room.RoomMgr import start_room_async
 from KalutServer.Room.RoomMgr import create_room as room_mgr_create_room
+import KalutServer.conf as myconf
 import re
 
 class Communicator(object):
@@ -13,10 +14,10 @@ class Communicator(object):
     # BASIC MYSQL COMMANDS
     def connect_to_db(self):
         self.conn = sql.connect(
-            user='kalut',
-            password=file('C:\\keys\\pwd.txt', 'r').readline(),
-            host='kalut.ml',
-            database='kalut'
+            user=myconf.mysql_user,
+            password=file(myconf.mysql_pwd_path, 'r').readline(),
+            host=myconf.mysql_host,
+            database=myconf.mysql_database
         )
         self.cur = self.conn.cursor()
 

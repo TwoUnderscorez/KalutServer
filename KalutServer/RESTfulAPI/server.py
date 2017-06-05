@@ -1,6 +1,7 @@
 import SSLbottle as blt
 from KalutServer.Exceptions import *
 from KalutServer.Model.Communicator import Communicator
+import KalutServer.conf as myconf
 import json
 
 def build_standart_response(data, status='OK', errMsg=None):
@@ -17,7 +18,7 @@ def handle_cm_func(func, *args):
     return build_standart_response(data)
 
 def start_server():
-    srv = blt.SSLWSGIRefServer(host="192.168.1.160", port=25565)
+    srv = blt.SSLWSGIRefServer(host=myconf.host, port=myconf.restapi_port)
     blt.run(server=srv)
 
 ## /    (general)

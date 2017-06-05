@@ -1,4 +1,5 @@
 from KalutServer.Exceptions import *
+import KalutServer.conf as myconf
 from KalutServer.Room import Room
 from random import randint
 import threading
@@ -11,12 +12,9 @@ import json
 import traceback
 rooms = dict()
 
-@staticmethod
-def funcname(parameter_list):
-    pass
 def soc_router():
     srvsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    srvsoc.bind(('localhost', 50000))
+    srvsoc.bind((myconf.host, myconf.sock_port))
     srvsoc.listen(5)
     while 1:
         cltsock, addr = srvsoc.accept()
