@@ -50,7 +50,7 @@ class Room(object):
                 self.time_to_remember = time.time()
             self.clients[connection]=[name, 0]
         self.select_lock.release()
-        print '{0} connected to room {1}'.format(self.clients[s][0], self.pin)
+        print '{0} connected to room {1}'.format(self.clients[connection][0], self.pin)
         
     def answer(self, s, ans, t):
         if int(ans) in self.correct_ans_index:
@@ -161,6 +161,7 @@ class Room(object):
                 maxx=keydata[1]
                 maxxname=keydata[0]
         self.trigger_event({'status' : 'eog', 'winner' : '{0} won with {1} points.'.format(maxxname, maxx)})
+        KalutServer.Room.RoomMgr.close_room(self.pin)
         
 
     def mainloop(self):
