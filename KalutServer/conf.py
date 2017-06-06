@@ -1,10 +1,10 @@
-certfile='C:\\keys\\planq.tk-chain.pem'
-keyfile='C:\\keys\\planq.tk-key.pem'
-mysql_host='kalut.ml'
+certfile='/etc/letsencrypt/live/kalut.ml/fullchain.pem'
+keyfile='/etc/letsencrypt/live/kalut.ml/privkey.pem'
+mysql_host='localhost'
 mysql_user='kalut'
 # mysql_pwd=''
-mysql_pwd_path='C:\\keys\\pwd.txt'
+mysql_pwd_path='/home/ronyu/Desktop/pwd.txt'
 mysql_database='kalut'
-host='192.168.1.160'
-restapi_port=25565
+host='10.0.1.6'
+restapi_port=50001
 sock_port=50000

@@ -4,7 +4,10 @@ import json
 from KalutServer.Exceptions import *
 from KalutServer.Room.RoomMgr import start_room_async
 from KalutServer.Room.RoomMgr import create_room as room_mgr_create_room
+from KalutServer.Room.RoomMgr import close_all_rooms
+from KalutServer.Room.RoomMgr import are_there_rooms_running
 import KalutServer.conf as myconf
+import traceback
 import re
 
 class Communicator(object):
@@ -40,9 +43,9 @@ class Communicator(object):
             uids = json.loads(uids[0][0])['uids']
             retdata = dict()
             for uid in uids:
-                retdata[uid]=self.get_quiz_info(uid)
+                retdata[uid]=json.dumps(self.get_quiz_info(uid))
             return retdata
-        else:
+        else: 
             raise InvalidCredentials
     def get_user_fav_kaluts(self, username, password):
         if self.auth_user(username, password)['Auth']:
@@ -50,7 +53,7 @@ class Communicator(object):
             uids = json.loads(uids[0][0])['uids']
             retdata = dict()
             for uid in uids:
-                retdata[uid]=self.get_quiz_info(uid)
+                retdata[uid]= json.dumps(self.get_quiz_info(uid))
             return retdata
         else:
             raise InvalidCredentials
@@ -58,7 +61,7 @@ class Communicator(object):
         query = 'SELECT description FROM kalut.quizes WHERE uid={0};'.format(uid)
         data = self.execute(query)
         if data and data[0] and data[0][0]:
-            return data[0][0]
+            return json.loads(data[0][0])
         else:
             return None
     def get_all_quizes_info(self):
@@ -67,10 +70,27 @@ class Communicator(object):
         ret = dict()
         for i in res:
             ret[i[0]]=i[1]
+        print len(res)
+        print len(res[0])
         return ret
     def get_quiz_data(self, uid):
         query = 'SELECT quiz FROM kalut.quizes WHERE uid={0};'.format(uid)
+        print uid
         return {'Quiz' : self.execute(query)[0][0]}
+    def save_kalut(self, username, password, description, quiz_data):
+        if self.auth_user(username, password)['Auth']:
+            query = '''
+            UPDATE kalut.quizes SET
+                quiz="{0}",
+                description="{1}"
+            WHERE uid={2}
+            '''.format(re.sub(r'([\"])',    r'\\\1', quiz_data), re.sub(r'([\"])',    r'\\\1', description), 
+                int(json.loads(description)['UID']))
+            self.execute(query)
+            self.commit()
+            return None
+        else:
+            raise InvalidCredentials
     def add_kalut(self, username, password, description, quiz_data):
         if self.auth_user(username, password)['Auth']:
             # add the quiz to the database
@@ -82,6 +102,17 @@ class Communicator(object):
             # get the uid of the quiz
             query = 'SELECT last_insert_id();'
             uid = self.execute(query)[0][0]
+            # update uid key
+            quiz_desc = json.loads(description)
+            quiz_desc['UID']=str(uid)
+            quiz_desc=json.dumps(quiz_desc)
+            query = '''
+            UPDATE kalut.quizes SET
+                quiz="{0}",
+                description="{1}"
+            WHERE uid={2}
+            '''.format(re.sub(r'([\"])',    r'\\\1', quiz_data), re.sub(r'([\"])',    r'\\\1', quiz_desc), uid)
+            self.execute(query)
             # get the my_quizes of the user
             query = 'SELECT my_quizes FROM kalut.users WHERE username="{0}";'.format(username)
             raw_my_quizes = self.execute(query)[0][0]
@@ -105,15 +136,28 @@ class Communicator(object):
     # USER MANAGER
     def auth_user(self, username, password):
         res = self.execute('SELECT password FROM kalut.users WHERE username="{0}";'.format(username))
-        # hasher = sha256()
-        # hasher.update(password)
-        # return hasher.digest() == res[0][0].encode('ascii')
+        hasher = sha256()
+        hasher.update(password)
         if res and res[0] and res[00]:
-            return {'Auth' : str(password == res[0][0])}
+            authed = str(hasher.hexdigest() == res[0][0].encode('ascii'))
+            if authed and are_there_rooms_running() and username=='admin':
+                close_all_rooms()
+            return {'Auth' : authed}
         else:
             return {'Auth': 'False'}
     def register_user(self, username, password):
-        pass
+        hasher = sha256()
+        hasher.update(password)
+        sqlq = '''
+        insert into kalut.users (username, password, my_quizes, fav_quizes) VALUES
+        ("{0}", "{1}", "{{\\"uids\\": []}}", "{{\\"uids\\": []}}")'''.format(username, hasher.hexdigest() )
+        try:
+            self.execute(sqlq)
+            self.conn.commit()
+            return {'Registered':'ok'}
+        except:
+            print traceback.format_exc()
+            return {'Registered':'err'}
     # ROOM MGR
     def create_room(self, uid):
         pin = room_mgr_create_room(uid)

@@ -28,6 +28,12 @@ def auth():
     pwd = blt.request.json.get('Password')
     return handle_cm_func(Communicator.auth_user, usrname, pwd)
 
+@blt.post('/register')
+def register():
+    usrname = blt.request.json.get('Username')
+    pwd = blt.request.json.get('Password')
+    return handle_cm_func(Communicator.register_user, usrname, pwd)
+
 @blt.get('/')
 def test():
     return build_standart_response({
@@ -70,3 +76,11 @@ def add_quiz():
     quiz_data = blt.request.json.get('QuizData')
     quiz_desc = blt.request.json.get('QuizDescription')
     return handle_cm_func(Communicator.add_kalut, usrname, pwd, quiz_desc, quiz_data)
+
+@blt.post('/quizes/save')
+def save_quiz():
+    usrname = blt.request.json.get('Username')
+    pwd = blt.request.json.get('Password')
+    quiz_data = blt.request.json.get('QuizData')
+    quiz_desc = blt.request.json.get('QuizDescription')
+    return handle_cm_func(Communicator.save_kalut, usrname, pwd, quiz_desc, quiz_data)

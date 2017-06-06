@@ -21,6 +21,7 @@ def RunKalutServer():
     RESTfulAPI_thread.daemon = True
     RESTfulAPI_thread.start()
 
+    # socket routert that routs clients to rooms
     soc_router()
 
 def RESTfulAPI_main():

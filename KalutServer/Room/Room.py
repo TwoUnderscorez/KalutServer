@@ -1,5 +1,6 @@
 import KalutServer.Model.Communicator
 from KalutServer.Exceptions import *
+import KalutServer.Room.RoomMgr
 import Queue
 import select
 import socket
@@ -8,6 +9,7 @@ import time
 import json
 import threading
 import time
+import ssl
 
 
 class Room(object):
@@ -33,7 +35,7 @@ class Room(object):
     def load_game_data(self):
         cmm = KalutServer.Model.Communicator.Communicator()
         self.game_data = json.loads(cmm.get_quiz_data(self.game_uid)['Quiz'])
-        self.game_desc = json.loads(cmm.get_quiz_info(self.game_uid))
+        self.game_desc = cmm.get_quiz_info(self.game_uid)
         cmm.logout()
 
     def add_client(self, connection, name):
@@ -48,7 +50,7 @@ class Room(object):
                 self.time_to_remember = time.time()
             self.clients[connection]=[name, 0]
         self.select_lock.release()
-        print 'client connected'
+        print '{0} connected to room {1}'.format(self.clients[s][0], self.pin)
         
     def answer(self, s, ans, t):
         if int(ans) in self.correct_ans_index:
@@ -65,6 +67,7 @@ class Room(object):
         if self.status == 'WAITING_FOR_PLAYERS':
             if len(self.clients) > 2:
                 self.status = 'WAITING_FOR_LAST_PLAYER'
+                return {'status' : 'ok'}
             else:
                 return {'status' : 'err', 'msg' : 'There arn\'t enough players to start a game.'}
         else:
@@ -88,8 +91,9 @@ class Room(object):
 
     def trigger_event(self, data):
         for s in self.event_register:
-            self.message_queues[s].put(json.dumps(data))
-            self.outputs.append(s)
+            if s in self.message_queues:
+                self.message_queues[s].put(json.dumps(data))
+                self.outputs.append(s)
         self.event_register = []
 
     def get_players(self, s):
@@ -100,6 +104,12 @@ class Room(object):
             if key[1]>-1:
                 res['players'].append(key[0])
         self.select_lock.release()
+        res['players']=json.dumps(res['players'])
+        res['game_status']=self.status
+        res['trigglen']=str(len(self.event_register))
+        res['onq']=str(self.on_question - 1)
+        if self.status in ('END_OF_GAME', 'GAME_ENDED'):
+            res['status']='eog'
         return res
 
     def update_correct_ans_index(self):
@@ -110,55 +120,66 @@ class Room(object):
 
     def handle_game_status_and_events(self):
         if self.status == 'WAITING_FOR_PLAYERS':
-            if time.time() - self.time_to_remember > self.game_desc["Timeout"]:
+            override = int(self.game_desc["Timeout"])==0
+            if int(self.game_desc["Timeout"])!=0 and \
+                (time.time() - self.time_to_remember > int(self.game_desc["Timeout"])):
                 if len(self.clients) > 2 and len(self.event_register) > 1:
                     self.status = 'NextQ'
                 elif len(self.clients) > 1:
                     self.status = 'WAITING_FOR_LAST_PLAYER'
-                print self.status
         elif self.status == 'WAITING_FOR_LAST_PLAYER':
             if len(self.clients) > 2:
                 self.status = 'WAITING_FOR_LAST_PLAYER_SYNC'
-                print self.status
         elif self.status == 'WAITING_FOR_LAST_PLAYER_SYNC':
             if len(self.event_register) > 1:
                 self.status = 'NextQ'
-                print self.status
         elif self.status == 'NextQ':
             self.on_question+=1
             if self.on_question > len(self.game_data):
                 self.status = 'END_OF_GAME'
-                print self.status
                 return
             self.update_correct_ans_index()
             self.time_to_remember = time.time()
             self.trigger_event({'ShowQ' : str(self.on_question - 1), 'status' : 'ok'})
             self.status = 'WAIT_FOR_Q_TIMEOUT'
             self.wallview_pressed_next = False
-            print self.status
         elif self.status == 'WAIT_FOR_Q_TIMEOUT':
             if (len(self.clients) == len(self.event_register) + 1) and self.wallview_pressed_next:
                 self.status = 'NextQ'
-                print self.status
         elif self.status == 'END_OF_GAME':
             self.end_game()
-        # for s in self.clients:
-        #     print str(self.clients[s][0]) + ' : ' + str(self.message_queues[s].qsize())
-
+            self.status = 'GAME_ENDED'
+        elif self.status == 'GAME_ENDED':
+            if len(self.clients)==0:
+                self.running=False
+            print 'Room {0} exited'.format(self.pin)
     def end_game(self):
-        self.trigger_event({'status' : 'eog'})
+        maxx=0
+        maxxname=''
+        for s,keydata in self.clients.items():
+            if keydata[1]>maxx:
+                maxx=keydata[1]
+                maxxname=keydata[0]
+        self.trigger_event({'status' : 'eog', 'winner' : '{0} won with {1} points.'.format(maxxname, maxx)})
+        
 
     def mainloop(self):
         while self.running:
-            self.handle_game_status_and_events()
-
+            self.handle_game_status_and_events()      
+                
             if not self.inputs:
                 time.sleep(0.5)
                 continue
             
+            if len(self.clients) < 3 and len(self.event_register) > 0 and self.status not in ('WAITING_FOR_PLAYERS', 'WAITING_FOR_LAST_PLAYER'):
+                self.status = 'END_OF_GAME'
+
             self.select_lock.acquire()
-            self.readable, self.writable, self.exceptional = select.select(
-                self.inputs, self.outputs, self.inputs)
+            try:
+                self.readable, self.writable, self.exceptional = select.select(
+                    self.inputs, self.outputs, self.inputs)
+            except:
+                self.running=False
             self.select_lock.release()
 
             for s in self.readable:
@@ -168,9 +189,7 @@ class Room(object):
                     data = None
                 if data:
                     tosend = self.handle_request(data, s)
-                    # print 'tosend = {0} for {1}'.format(tosend, self.clients[s][0])
                     if tosend:
-                        # print 'Added to queue.'
                         self.message_queues[s].put(tosend)
                     if s not in self.outputs:
                         self.outputs.append(s)
@@ -185,14 +204,13 @@ class Room(object):
             for s in self.writable:
                 try:
                     next_msg = self.message_queues[s].get_nowait()
-                    # print 'sending {0} to {1}'.format(next_msg, self.clients[s][0])
                 except Queue.Empty:
-                    self.outputs.remove(s)
+                    if s in self.outputs:
+                        self.outputs.remove(s)
                 except KeyError:
-                    print 'KeyError'
+                    pass
                 else:
                     s.send(next_msg)
-                    # print 'sent'
 
             for s in self.exceptional:
                 self.inputs.remove(s)
@@ -201,7 +219,9 @@ class Room(object):
                 s.close()
                 del self.message_queues[s]
                 del self.clients[s]
-
+        
 
     def close(self):
         self.running = False
+        for s,pin in self.clients.items():
+            s.close()
