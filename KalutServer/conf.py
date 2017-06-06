@@ -1,3 +1,4 @@
+# config file
 certfile='/etc/letsencrypt/live/kalut.ml/fullchain.pem'
 keyfile='/etc/letsencrypt/live/kalut.ml/privkey.pem'
 mysql_host='localhost'
