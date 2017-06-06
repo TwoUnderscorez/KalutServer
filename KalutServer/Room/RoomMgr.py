@@ -30,7 +30,7 @@ def soc_router():
         try:
             if data:
                 req = json.loads(data)
-                rint 'Client with name {0} connected, client...'.format(req['name'])
+                print 'Client with name {0} connected, client...'.format(req['name'])
                 if int(req['pin']) in rooms.keys() and req['name']:
                     if rooms[req['pin']].status in ('WAITING_FOR_PLAYERS', 'WAITING_FOR_LAST_PLAYER'):
                         sslcltsock.send(json.dumps({'status' : 'ok', 'UID' : str(rooms[req['pin']].game_uid)}))
