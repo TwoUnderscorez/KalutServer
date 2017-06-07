@@ -1,4 +1,4 @@
-# # KalutServer
+# KalutServer
 This is an implementation of a kahoot server.
 To configure the server please visit the config.py file.
 To run the server all you need is a computer with rsa keys and the mysql connector from oracle installed.
