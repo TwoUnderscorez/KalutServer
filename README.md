@@ -1,4 +1,4 @@
-# KalutServer
+# # KalutServer
 This is an implementation of a kahoot server.
 To configure the server please visit the config.py file.
 To run the server all you need is a computer with rsa keys and the mysql connector from oracle installed.
@@ -17,3 +17,7 @@ Your database must be set up as follows:
 4. And you are done!
 # Final Notes
 If you have set up the database correctly, the server should work.
+# JSON Stacture
+1. my_quizes and fav_quizes contain a json: {"uids" : [ \<list of uids> ] }
+2. quiz json stracture: [ {"Time" : question time, "Question": question string, "Answers": [ {"Key": answer, "Value": right/wrong }, ...] } }, ...]
+3. description json stacture: {"UID" : uid, "Name": name of quiz, "Description" : desc of quiz, "Timeout" : player join timeout}
